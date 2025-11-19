@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { TrendingUp, Calendar, Award, Target, Activity, Zap } from 'lucide-react';
@@ -8,6 +8,11 @@ import Link from 'next/link';
 
 export default function ReportsPage() {
   const [selectedWeek, setSelectedWeek] = useState('current');
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const weeklyData = {
     current: {
@@ -57,6 +62,10 @@ export default function ReportsPage() {
   };
 
   const data = weeklyData[selectedWeek as keyof typeof weeklyData];
+
+  if (!mounted) {
+    return null;
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-white via-green-50/30 to-white">
@@ -115,7 +124,7 @@ export default function ReportsPage() {
                 <Activity className="w-5 h-5 text-teal-600" />
                 <span className="text-sm text-gray-600">Passos</span>
               </div>
-              <p className="text-2xl font-bold text-gray-900">{data.summary.totalSteps.toLocaleString()}</p>
+              <p className="text-2xl font-bold text-gray-900">{data.summary.totalSteps.toLocaleString('pt-BR')}</p>
               <p className="text-xs text-gray-500 mt-1">Total na semana</p>
             </Card>
 
@@ -124,7 +133,7 @@ export default function ReportsPage() {
                 <Activity className="w-5 h-5 text-blue-600" />
                 <span className="text-sm text-gray-600">Água</span>
               </div>
-              <p className="text-2xl font-bold text-gray-900">{data.summary.avgWater}L</p>
+              <p className="text-2xl font-bold text-gray-900">{data.summary.avgWater.toLocaleString('pt-BR')}L</p>
               <p className="text-xs text-gray-500 mt-1">Média diária</p>
             </Card>
 
@@ -133,7 +142,7 @@ export default function ReportsPage() {
                 <Activity className="w-5 h-5 text-purple-600" />
                 <span className="text-sm text-gray-600">Sono</span>
               </div>
-              <p className="text-2xl font-bold text-gray-900">{data.summary.avgSleep}h</p>
+              <p className="text-2xl font-bold text-gray-900">{data.summary.avgSleep.toLocaleString('pt-BR')}h</p>
               <p className="text-xs text-gray-500 mt-1">Média diária</p>
             </Card>
 
@@ -151,7 +160,7 @@ export default function ReportsPage() {
                 <Zap className="w-5 h-5 text-yellow-600" />
                 <span className="text-sm text-gray-600">Calorias</span>
               </div>
-              <p className="text-2xl font-bold text-gray-900">{data.summary.caloriesBurned}</p>
+              <p className="text-2xl font-bold text-gray-900">{data.summary.caloriesBurned.toLocaleString('pt-BR')}</p>
               <p className="text-xs text-gray-500 mt-1">Queimadas</p>
             </Card>
           </div>

@@ -11,15 +11,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Buscar chave da API das variáveis de ambiente
+    // Buscar chave da API das variáveis de ambiente (configurada de forma definitiva)
     const openaiApiKey = process.env.OPENAI_API_KEY;
 
-    if (!openaiApiKey || openaiApiKey === 'sua_chave_aqui') {
+    if (!openaiApiKey) {
       console.error('OPENAI_API_KEY não configurada nas variáveis de ambiente');
       return NextResponse.json(
         { 
-          error: 'Chave da API OpenAI não configurada',
-          message: 'Configure a variável OPENAI_API_KEY nas configurações do projeto'
+          error: 'Serviço temporariamente indisponível',
+          message: 'Entre em contato com o suporte'
         },
         { status: 500 }
       );
@@ -65,19 +65,19 @@ export async function POST(request: NextRequest) {
       console.error('Erro detalhado da OpenAI:', JSON.stringify(errorData, null, 2));
       
       // Mensagens de erro mais amigáveis
-      let errorMessage = 'Erro ao analisar imagem com a OpenAI';
+      let errorMessage = 'Erro ao analisar imagem. Tente novamente em alguns instantes.';
       
       if (errorData.error?.code === 'invalid_api_key') {
-        errorMessage = 'Chave da API OpenAI inválida ou expirada. Verifique sua chave nas configurações.';
+        errorMessage = 'Erro de configuração do serviço. Entre em contato com o suporte.';
       } else if (errorData.error?.code === 'insufficient_quota') {
-        errorMessage = 'Limite de uso da API OpenAI excedido. Verifique seu plano na OpenAI.';
+        errorMessage = 'Limite de uso temporariamente excedido. Tente novamente mais tarde.';
       } else if (errorData.error?.message) {
-        errorMessage = errorData.error.message;
+        errorMessage = 'Erro ao processar imagem. Tente com outra foto.';
       }
       
       return NextResponse.json(
-        { error: errorMessage, details: errorData },
-        { status: openaiResponse.status }
+        { error: errorMessage },
+        { status: 500 }
       );
     }
 
@@ -89,7 +89,7 @@ export async function POST(request: NextRequest) {
 
     if (!analysis) {
       return NextResponse.json(
-        { error: 'Nenhuma análise foi retornada pela OpenAI' },
+        { error: 'Não foi possível analisar a imagem. Tente com uma foto mais clara.' },
         { status: 500 }
       );
     }
@@ -105,13 +105,13 @@ export async function POST(request: NextRequest) {
     // Tratamento específico para erros de rede
     if (error instanceof TypeError && error.message.includes('fetch')) {
       return NextResponse.json(
-        { error: 'Erro de conexão com a API da OpenAI. Verifique sua conexão com a internet.' },
+        { error: 'Erro de conexão. Verifique sua internet e tente novamente.' },
         { status: 503 }
       );
     }
     
     return NextResponse.json(
-      { error: 'Erro interno do servidor', details: String(error) },
+      { error: 'Erro ao processar sua solicitação. Tente novamente.' },
       { status: 500 }
     );
   }

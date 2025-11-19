@@ -5,9 +5,9 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Heart, Mail, Lock, User, ArrowRight, ArrowLeft } from 'lucide-react';
+import { Heart, Mail, Lock, User, ArrowRight, ArrowLeft, AlertCircle } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { supabase } from '@/lib/supabase';
+import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import { hasMasterAccess, setMasterAccess } from '@/lib/masterAccess';
 
 export default function AuthPage() {
@@ -48,6 +48,13 @@ export default function AuthPage() {
     }
   }, [searchParams]);
 
+  // Verificar se o Supabase está configurado ao montar o componente
+  useEffect(() => {
+    if (!isSupabaseConfigured()) {
+      setError('⚠️ Sistema de autenticação não configurado. Por favor, configure as variáveis de ambiente do Supabase ou clique no banner laranja acima para conectar sua conta.');
+    }
+  }, []);
+
   const handleForgotPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -55,6 +62,10 @@ export default function AuthPage() {
     setLoading(true);
 
     try {
+      if (!isSupabaseConfigured()) {
+        throw new Error('Sistema de autenticação não configurado. Configure as variáveis de ambiente do Supabase.');
+      }
+
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: `${window.location.origin}/auth/reset-password`,
       });
@@ -86,9 +97,9 @@ export default function AuthPage() {
     setLoading(true);
     
     try {
-      // Verificar se as variáveis de ambiente estão configuradas
-      if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
-        throw new Error('Configuração do Supabase não encontrada. Por favor, configure as variáveis de ambiente.');
+      // Verificar se o Supabase está configurado
+      if (!isSupabaseConfigured()) {
+        throw new Error('⚠️ Sistema de autenticação não configurado.\n\nPara usar o sistema de autenticação, você precisa:\n\n1. Conectar sua conta Supabase clicando no banner laranja acima, OU\n2. Configurar as variáveis de ambiente:\n   - NEXT_PUBLIC_SUPABASE_URL\n   - NEXT_PUBLIC_SUPABASE_ANON_KEY\n\nSem essas configurações, o login não funcionará.');
       }
 
       if (isLogin) {
@@ -514,7 +525,10 @@ export default function AuthPage() {
           {/* Mensagens de erro e sucesso */}
           {error && (
             <div className="mb-4 p-3 rounded-lg bg-red-50 border border-red-200">
-              <p className="text-xs sm:text-sm text-red-600">{error}</p>
+              <div className="flex items-start gap-2">
+                <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+                <p className="text-xs sm:text-sm text-red-600 whitespace-pre-line">{error}</p>
+              </div>
             </div>
           )}
 
@@ -611,7 +625,10 @@ export default function AuthPage() {
         {/* Mensagens de erro e sucesso */}
         {error && (
           <div className="mb-4 p-3 rounded-lg bg-red-50 border border-red-200">
-            <p className="text-xs sm:text-sm text-red-600">{error}</p>
+            <div className="flex items-start gap-2">
+              <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+              <p className="text-xs sm:text-sm text-red-600 whitespace-pre-line">{error}</p>
+            </div>
           </div>
         )}
 

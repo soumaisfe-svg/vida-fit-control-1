@@ -1,14 +1,11 @@
 "use client";
 
-import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Heart, Droplets, Moon, TrendingUp, Sparkles, Check, Star, Zap, Shield, Award, Flame } from 'lucide-react';
 import Link from 'next/link';
 
 export default function LandingPage() {
-  const [email, setEmail] = useState('');
-
   return (
     <div className="min-h-screen bg-gradient-to-b from-white via-teal-50/30 to-white">
       {/* Header */}
@@ -452,7 +449,7 @@ function TestimonialCard({ name, role, text, rating }: any) {
           <Star key={i} className="w-5 h-5 fill-yellow-400 text-yellow-400" />
         ))}
       </div>
-      <p className="text-gray-600 mb-4 italic">"{text}"</p>
+      <p className="text-gray-600 mb-4 italic">&quot;{text}&quot;</p>
       <div>
         <div className="font-semibold text-gray-900">{name}</div>
         <div className="text-sm text-gray-500">{role}</div>

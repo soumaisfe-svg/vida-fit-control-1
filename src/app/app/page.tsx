@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Camera, Upload, Loader2, Apple, TrendingUp, Flame, AlertCircle, Settings } from 'lucide-react';
+import { Camera, Upload, Loader2, Apple, TrendingUp, Flame, AlertCircle } from 'lucide-react';
 import Link from 'next/link';
 
 export default function AppPage() {
@@ -11,7 +11,6 @@ export default function AppPage() {
   const [analyzing, setAnalyzing] = useState(false);
   const [result, setResult] = useState<{ food: string; calories: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [needsConfig, setNeedsConfig] = useState(false);
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -21,7 +20,6 @@ export default function AppPage() {
         setSelectedImage(reader.result as string);
         setResult(null);
         setError(null);
-        setNeedsConfig(false);
       };
       reader.readAsDataURL(file);
     }
@@ -32,17 +30,6 @@ export default function AppPage() {
 
     setAnalyzing(true);
     setError(null);
-    setNeedsConfig(false);
-
-    // Verificar se a API key está configurada no localStorage
-    const apiKey = localStorage.getItem('openai_api_key');
-    
-    if (!apiKey || apiKey.trim() === '') {
-      setError('Você precisa configurar sua chave da OpenAI para usar esta funcionalidade.');
-      setNeedsConfig(true);
-      setAnalyzing(false);
-      return;
-    }
 
     try {
       const response = await fetch('/api/analyze-food', {
@@ -52,7 +39,6 @@ export default function AppPage() {
         },
         body: JSON.stringify({
           imageUrl: selectedImage,
-          apiKey: apiKey, // Enviar a API key junto com a requisição
           context: 'Analise esta imagem de alimento e identifique: 1) Nome específico do alimento ou prato, 2) Quantidade aproximada de calorias totais. Seja preciso e detalhado na identificação. Responda APENAS no formato: "ALIMENTO: [nome] | CALORIAS: [número]"'
         }),
       });
@@ -71,7 +57,6 @@ export default function AppPage() {
         });
       } else {
         setError(data.message || data.error || 'Erro ao analisar imagem');
-        setNeedsConfig(data.needsConfig || false);
       }
     } catch (err) {
       setError('Erro ao conectar com o servidor');
@@ -94,19 +79,11 @@ export default function AppPage() {
               VivaFit Control
             </span>
           </Link>
-          <div className="flex items-center gap-2">
-            <Link href="/settings">
-              <Button variant="ghost" size="sm">
-                <Settings className="w-5 h-5 mr-2" />
-                Configurações
-              </Button>
-            </Link>
-            <Link href="/dashboard">
-              <Button variant="ghost">
-                Voltar
-              </Button>
-            </Link>
-          </div>
+          <Link href="/dashboard">
+            <Button variant="ghost">
+              Voltar
+            </Button>
+          </Link>
         </div>
       </header>
 
@@ -188,7 +165,6 @@ export default function AppPage() {
                         setSelectedImage(null);
                         setResult(null);
                         setError(null);
-                        setNeedsConfig(false);
                       }}
                       variant="outline"
                       size="lg"
@@ -199,40 +175,18 @@ export default function AppPage() {
                 </div>
               )}
 
-              {/* Error Message with Config Instructions */}
+              {/* Error Message */}
               {error && (
-                <div className={`p-6 rounded-xl border ${needsConfig ? 'bg-orange-50 border-orange-300' : 'bg-red-50 border-red-200'}`}>
+                <div className="p-6 rounded-xl border bg-red-50 border-red-200">
                   <div className="flex items-start gap-3">
-                    <AlertCircle className={`w-6 h-6 flex-shrink-0 ${needsConfig ? 'text-orange-600' : 'text-red-600'}`} />
+                    <AlertCircle className="w-6 h-6 flex-shrink-0 text-red-600" />
                     <div className="flex-1">
-                      <p className={`font-semibold mb-2 ${needsConfig ? 'text-orange-900' : 'text-red-900'}`}>
-                        {needsConfig ? '🔑 Configuração Necessária' : '⚠️ Erro na Análise'}
+                      <p className="font-semibold mb-2 text-red-900">
+                        ⚠️ Erro na Análise
                       </p>
-                      <p className={`text-sm mb-3 ${needsConfig ? 'text-orange-700' : 'text-red-700'}`}>
+                      <p className="text-sm text-red-700">
                         {error}
                       </p>
-                      {needsConfig && (
-                        <div className="space-y-3">
-                          <div className="p-4 bg-orange-100 rounded-lg">
-                            <p className="text-sm font-medium text-orange-900 mb-2">
-                              📝 Como configurar:
-                            </p>
-                            <ol className="text-sm text-orange-800 space-y-1 ml-4 list-decimal">
-                              <li>Obtenha uma chave de API da OpenAI em <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener noreferrer" className="underline font-medium">platform.openai.com</a></li>
-                              <li>Clique no botão "Ir para Configurações" abaixo</li>
-                              <li>Cole sua chave na seção "Chave da OpenAI"</li>
-                              <li>Clique em "Salvar Chave"</li>
-                              <li>Volte aqui e tente novamente</li>
-                            </ol>
-                          </div>
-                          <Link href="/settings">
-                            <Button className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white">
-                              <Settings className="w-5 h-5 mr-2" />
-                              Ir para Configurações
-                            </Button>
-                          </Link>
-                        </div>
-                      )}
                     </div>
                   </div>
                 </div>

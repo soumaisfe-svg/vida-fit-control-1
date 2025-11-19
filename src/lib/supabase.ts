@@ -1,42 +1,52 @@
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 
 // Validar se as variáveis de ambiente estão configuradas
 if (!supabaseUrl || !supabaseAnonKey) {
-  console.error('⚠️ Variáveis de ambiente do Supabase não configuradas');
+  console.error('⚠️ ERRO CRÍTICO: Variáveis de ambiente do Supabase não configuradas!');
+  console.error('Configure NEXT_PUBLIC_SUPABASE_URL e NEXT_PUBLIC_SUPABASE_ANON_KEY');
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-  auth: {
-    autoRefreshToken: true,
-    persistSession: true,
-    detectSessionInUrl: true,
-    // Configurações para melhor tratamento de erros
-    storage: typeof window !== 'undefined' ? window.localStorage : undefined,
-    storageKey: 'vivafit-auth',
-    flowType: 'pkce',
-  },
-  global: {
-    headers: {
-      'x-application-name': 'vivafit-control',
-    },
-  },
-  // Configurações de retry para melhor resiliência
-  db: {
-    schema: 'public',
-  },
-  realtime: {
-    params: {
-      eventsPerSecond: 10,
-    },
-  },
-});
+// Criar cliente apenas se as variáveis estiverem configuradas
+export const supabase = supabaseUrl && supabaseAnonKey 
+  ? createClient(supabaseUrl, supabaseAnonKey, {
+      auth: {
+        autoRefreshToken: true,
+        persistSession: true,
+        detectSessionInUrl: true,
+        storage: typeof window !== 'undefined' ? window.localStorage : undefined,
+        storageKey: 'vivafit-auth',
+        flowType: 'pkce',
+      },
+      global: {
+        headers: {
+          'x-application-name': 'vivafit-control',
+        },
+      },
+      db: {
+        schema: 'public',
+      },
+      realtime: {
+        params: {
+          eventsPerSecond: 10,
+        },
+      },
+    })
+  : null as any; // Fallback para evitar erros de compilação
+
+// Helper para verificar se o Supabase está configurado
+export function isSupabaseConfigured(): boolean {
+  return !!(supabaseUrl && supabaseAnonKey);
+}
 
 // Helper para verificar se o usuário está autenticado
 export async function getCurrentUser() {
   try {
+    if (!isSupabaseConfigured()) {
+      throw new Error('Supabase não está configurado. Configure as variáveis de ambiente.');
+    }
     const { data: { user }, error } = await supabase.auth.getUser();
     if (error) throw error;
     return user;
@@ -49,6 +59,9 @@ export async function getCurrentUser() {
 // Helper para fazer logout
 export async function signOut() {
   try {
+    if (!isSupabaseConfigured()) {
+      throw new Error('Supabase não está configurado. Configure as variáveis de ambiente.');
+    }
     const { error } = await supabase.auth.signOut();
     if (error) throw error;
     return { success: true };
