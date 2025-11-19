@@ -14,42 +14,26 @@ export default function AuthCallbackPage() {
   useEffect(() => {
     const handleCallback = async () => {
       try {
-        // Obter o código de confirmação da URL
-        const hashParams = new URLSearchParams(window.location.hash.substring(1));
-        const accessToken = hashParams.get('access_token');
-        const type = hashParams.get('type');
+        // Processar o callback de confirmação de email do Supabase
+        const { data, error } = await supabase.auth.exchangeCodeForSession(window.location.search);
 
-        if (type === 'signup' && accessToken) {
-          // Confirmar email foi verificado
-          const { data: { user }, error } = await supabase.auth.getUser(accessToken);
+        if (error) {
+          throw error;
+        }
 
-          if (error) {
-            throw error;
-          }
-
-          if (user) {
-            setStatus('success');
-            setMessage('Email confirmado com sucesso! Redirecionando para o login...');
-            
-            // Aguardar 2 segundos antes de redirecionar para a página de login
-            setTimeout(() => {
-              router.push('/auth');
-            }, 2000);
-          }
-        } else {
-          // Se não houver token, verificar sessão atual
-          const { data: { session } } = await supabase.auth.getSession();
+        if (data?.session) {
+          setStatus('success');
+          setMessage('Email confirmado com sucesso! Redirecionando para o login...');
           
-          if (session) {
-            setStatus('success');
-            setMessage('Autenticação confirmada! Redirecionando para o login...');
-            
-            setTimeout(() => {
-              router.push('/auth');
-            }, 2000);
-          } else {
-            throw new Error('Sessão não encontrada');
-          }
+          // Fazer logout para forçar novo login
+          await supabase.auth.signOut();
+          
+          // Aguardar 2 segundos antes de redirecionar para a página de login
+          setTimeout(() => {
+            router.push('/auth/login');
+          }, 2000);
+        } else {
+          throw new Error('Sessão não encontrada');
         }
       } catch (error) {
         console.error('Erro no callback:', error);
@@ -58,7 +42,7 @@ export default function AuthCallbackPage() {
         
         // Redirecionar para login após 3 segundos
         setTimeout(() => {
-          router.push('/auth');
+          router.push('/auth/login');
         }, 3000);
       }
     };
