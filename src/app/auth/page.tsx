@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -10,7 +10,8 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import { hasMasterAccess, setMasterAccess } from '@/lib/masterAccess';
 
-export default function AuthPage() {
+// Componente interno que usa useSearchParams
+function AuthContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isLogin, setIsLogin] = useState(true);
@@ -754,5 +755,30 @@ export default function AuthPage() {
         </div>
       </Card>
     </div>
+  );
+}
+
+// Componente de loading para o Suspense
+function AuthLoading() {
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-white via-teal-50/30 to-white flex items-center justify-center p-4">
+      <Card className="w-full max-w-md p-6 sm:p-8 shadow-2xl">
+        <div className="text-center">
+          <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-gradient-to-br from-teal-400 to-teal-600 flex items-center justify-center mx-auto mb-4 animate-pulse">
+            <Heart className="w-7 h-7 sm:w-8 sm:h-8 text-white" />
+          </div>
+          <p className="text-gray-600">Carregando...</p>
+        </div>
+      </Card>
+    </div>
+  );
+}
+
+// Componente principal exportado com Suspense
+export default function AuthPage() {
+  return (
+    <Suspense fallback={<AuthLoading />}>
+      <AuthContent />
+    </Suspense>
   );
 }
