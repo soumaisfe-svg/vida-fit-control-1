@@ -54,33 +54,58 @@ export default function LoginPage() {
           if (error.message.includes('Email not confirmed') || 
               error.message.includes('email not confirmed')) {
             setError('Por favor, confirme seu email antes de fazer login. Verifique sua caixa de entrada e clique no link de confirmação.');
+            setLoading(false);
+            return;
           } else {
             setError(error.message || 'Erro ao fazer login');
+            setLoading(false);
+            return;
           }
-          setLoading(false);
-          return;
         }
 
         if (data.user && data.session) {
-          // Verificar se já tem assinatura ativa
-          const hasSubscription = localStorage.getItem('subscriptionActive') === 'true';
+          // Verificar no banco de dados se o usuário já completou o questionário
+          const { data: questionnaireData } = await supabase
+            .from('questionnaire_responses')
+            .select('id')
+            .eq('user_id', data.user.id)
+            .single();
+
+          // Verificar se tem assinatura ativa
+          const { data: subscriptionData } = await supabase
+            .from('subscriptions')
+            .select('status')
+            .eq('user_id', data.user.id)
+            .eq('status', 'active')
+            .single();
+
+          // Lógica de redirecionamento:
+          // 1. Se NÃO completou questionário → vai pro questionário
+          // 2. Se completou questionário mas NÃO pagou → vai pro pagamento
+          // 3. Se completou questionário E pagou → vai pro dashboard
           
-          if (hasSubscription) {
-            // Se já pagou, vai direto pro dashboard
-            router.push('/dashboard');
-          } else {
-            // Se não pagou, vai pro questionário primeiro
+          if (!questionnaireData) {
+            // Não completou questionário → vai pro questionário
             router.push('/questionnaire');
+          } else if (!subscriptionData) {
+            // Completou questionário mas não pagou → vai pro pagamento
+            router.push('/payment');
+          } else {
+            // Completou tudo → vai pro dashboard
+            router.push('/dashboard');
           }
         }
       }
-    } catch (error: any) {
-      setError(error.message || 'Erro ao processar sua solicitação');
-      setLoading(false);
-    } finally {
-      if (!error) {
-        setLoading(false);
+    } catch (err: any) {
+      // Tratar erro de email não confirmado silenciosamente
+      if (err.message?.includes('Email not confirmed') || 
+          err.message?.includes('email not confirmed')) {
+        setError('Por favor, confirme seu email antes de fazer login. Verifique sua caixa de entrada.');
+      } else {
+        setError(err.message || 'Erro ao processar sua solicitação');
       }
+    } finally {
+      setLoading(false);
     }
   };
 

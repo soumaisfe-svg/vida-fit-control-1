@@ -21,16 +21,42 @@ export default function AuthCallbackPage() {
           throw error;
         }
 
-        if (data?.session) {
+        if (data?.session && data?.user) {
           setStatus('success');
-          setMessage('Email confirmado com sucesso! Redirecionando para o login...');
+          setMessage('Email confirmado com sucesso! Redirecionando...');
           
-          // Fazer logout para forçar novo login
-          await supabase.auth.signOut();
-          
-          // Aguardar 2 segundos antes de redirecionar para a página de login
+          // Verificar no banco de dados se o usuário já completou o questionário
+          const { data: questionnaireData } = await supabase
+            .from('questionnaire_responses')
+            .select('id')
+            .eq('user_id', data.user.id)
+            .single();
+
+          // Verificar se tem assinatura ativa
+          const { data: subscriptionData } = await supabase
+            .from('subscriptions')
+            .select('status')
+            .eq('user_id', data.user.id)
+            .eq('status', 'active')
+            .single();
+
+          // Aguardar 2 segundos antes de redirecionar
           setTimeout(() => {
-            router.push('/auth/login');
+            // Lógica de redirecionamento:
+            // 1. Se NÃO completou questionário → vai pro questionário
+            // 2. Se completou questionário mas NÃO pagou → vai pro pagamento
+            // 3. Se completou questionário E pagou → vai pro dashboard
+            
+            if (!questionnaireData) {
+              // Não completou questionário → vai pro questionário
+              router.push('/questionnaire');
+            } else if (!subscriptionData) {
+              // Completou questionário mas não pagou → vai pro pagamento
+              router.push('/payment');
+            } else {
+              // Completou tudo → vai pro dashboard
+              router.push('/dashboard');
+            }
           }, 2000);
         } else {
           throw new Error('Sessão não encontrada');
