@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { supabase } from '@/lib/supabase';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -12,6 +11,7 @@ import { Heart, User, Calendar, Activity, Target, Loader2 } from 'lucide-react';
 export default function QuestionnairePage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const [formData, setFormData] = useState({
     age: '',
     weight: '',
@@ -21,13 +21,10 @@ export default function QuestionnairePage() {
     healthConditions: '',
   });
 
-  // Verificar se já tem assinatura ativa
+  // Evitar hidratação e navegação automática problemática
   useEffect(() => {
-    const hasSubscription = localStorage.getItem('subscriptionActive') === 'true';
-    if (hasSubscription) {
-      router.push('/dashboard');
-    }
-  }, [router]);
+    setMounted(true);
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -48,12 +45,10 @@ export default function QuestionnairePage() {
       // Marcar questionário como completo
       localStorage.setItem('questionnaireCompleted', 'true');
 
-      // Redirecionar para o pagamento
-      router.push('/payment');
+      // Usar window.location para evitar problemas de prefetch
+      window.location.href = '/payment';
     } catch (error: any) {
-      console.error('Erro ao salvar questionário:', error);
       alert('Erro ao salvar suas informações. Tente novamente.');
-    } finally {
       setLoading(false);
     }
   };
@@ -64,6 +59,10 @@ export default function QuestionnairePage() {
       [e.target.name]: e.target.value,
     });
   };
+
+  if (!mounted) {
+    return null;
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-white via-teal-50/30 to-white p-4">

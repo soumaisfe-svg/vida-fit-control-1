@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Heart, Mail, Lock, User, ArrowRight, ArrowLeft, AlertCircle } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
-import { hasMasterAccess, setMasterAccess } from '@/lib/masterAccess';
+import { hasMasterAccess, setMasterAccess, MASTER_CREDENTIALS } from '@/lib/masterAccess';
 
 // Componente de loading para o Suspense
 function AuthLoading() {
@@ -114,12 +114,24 @@ function AuthContent() {
     setLoading(true);
     
     try {
-      // Verificar se o Supabase está configurado
-      if (!isSupabaseConfigured()) {
-        throw new Error('⚠️ Sistema de autenticação não configurado.\n\nPara usar o sistema de autenticação, você precisa:\n\n1. Conectar sua conta Supabase clicando no banner laranja acima, OU\n2. Configurar as variáveis de ambiente:\n   - NEXT_PUBLIC_SUPABASE_URL\n   - NEXT_PUBLIC_SUPABASE_ANON_KEY\n\nSem essas configurações, o login não funcionará.');
-      }
-
       if (isLogin) {
+        // Verificar se é login com credenciais master
+        if (email.toLowerCase() === MASTER_CREDENTIALS.email.toLowerCase() && 
+            password === MASTER_CREDENTIALS.password) {
+          // Login master - bypass Supabase
+          setMasterAccess(email);
+          setSuccessMessage('✅ Login master realizado com sucesso!');
+          setTimeout(() => {
+            router.push('/dashboard');
+          }, 1000);
+          return;
+        }
+
+        // Verificar se o Supabase está configurado para login normal
+        if (!isSupabaseConfigured()) {
+          throw new Error('⚠️ Sistema de autenticação não configurado.\n\nPara usar o sistema de autenticação, você precisa:\n\n1. Conectar sua conta Supabase clicando no banner laranja acima, OU\n2. Configurar as variáveis de ambiente:\n   - NEXT_PUBLIC_SUPABASE_URL\n   - NEXT_PUBLIC_SUPABASE_ANON_KEY\n\nSem essas configurações, o login não funcionará.');
+        }
+
         // Login com Supabase
         const { data, error } = await supabase.auth.signInWithPassword({
           email,
@@ -167,6 +179,11 @@ function AuthContent() {
         // Validação de senha antes de cadastrar
         if (password.length < 6) {
           throw new Error('A senha deve ter pelo menos 6 caracteres.');
+        }
+
+        // Verificar se o Supabase está configurado
+        if (!isSupabaseConfigured()) {
+          throw new Error('⚠️ Sistema de autenticação não configurado.\n\nPara criar uma conta, você precisa:\n\n1. Conectar sua conta Supabase clicando no banner laranja acima, OU\n2. Configurar as variáveis de ambiente:\n   - NEXT_PUBLIC_SUPABASE_URL\n   - NEXT_PUBLIC_SUPABASE_ANON_KEY');
         }
 
         // Cadastro com Supabase

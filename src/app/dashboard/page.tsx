@@ -29,29 +29,48 @@ export default function DashboardPage() {
 
   const checkAuth = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+
+      // Se houver erro de rede, apenas define loading como false
+      if (userError) {
+        setLoading(false);
+        return;
+      }
 
       if (!user) {
-        router.push('/auth/login');
+        try {
+          router.push('/auth');
+        } catch (e) {
+          // Ignora erros de navegação
+        }
         return;
       }
 
       // Buscar perfil do usuário
-      const { data: profileData } = await supabase
+      const { data: profileData, error: profileError } = await supabase
         .from('user_profiles')
         .select('*')
         .eq('user_id', user.id)
         .single();
 
+      // Se houver erro de rede, apenas define loading como false
+      if (profileError) {
+        setLoading(false);
+        return;
+      }
+
       if (!profileData?.questionnaire_completed) {
-        router.push('/questionnaire');
+        try {
+          router.push('/auth');
+        } catch (e) {
+          // Ignora erros de navegação
+        }
         return;
       }
 
       setProfile(profileData);
 
       // Verificar status de pagamento (simulado)
-      // Aqui você integraria com seu sistema de pagamento real
       const { data: paymentData } = await supabase
         .from('user_subscriptions')
         .select('status')
@@ -60,7 +79,8 @@ export default function DashboardPage() {
 
       setHasPaid(paymentData?.status === 'active');
     } catch (error) {
-      console.error('Erro ao verificar autenticação:', error);
+      // Silenciosamente trata o erro sem redirecionar
+      console.log('Auth check error:', error);
     } finally {
       setLoading(false);
     }
@@ -68,7 +88,11 @@ export default function DashboardPage() {
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
-    router.push('/auth/login');
+    try {
+      router.push('/auth');
+    } catch (e) {
+      // Ignora erros de navegação
+    }
   };
 
   const handlePayment = () => {

@@ -4,6 +4,8 @@ import Script from "next/script";
 import "./globals.css";
 // Import all available fonts for AI usage
 import "../lib/fonts";
+// Import Supabase error handler to suppress network errors
+import "../lib/supabase-error-handler";
 
 export const metadata: Metadata = {
   title: "Criado com a Lasy",
