@@ -62,9 +62,16 @@ export default function LoginPage() {
         }
 
         if (data.user && data.session) {
-          // Sempre redirecionar para o questionário após login bem-sucedido
-          // O questionário irá verificar se já foi preenchido e redirecionar adequadamente
-          router.push('/questionnaire');
+          // Verificar se já tem assinatura ativa
+          const hasSubscription = localStorage.getItem('subscriptionActive') === 'true';
+          
+          if (hasSubscription) {
+            // Se já pagou, vai direto pro dashboard
+            router.push('/dashboard');
+          } else {
+            // Se não pagou, vai pro questionário primeiro
+            router.push('/questionnaire');
+          }
         }
       }
     } catch (error: any) {

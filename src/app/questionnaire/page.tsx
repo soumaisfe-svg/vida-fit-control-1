@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { Card } from '@/components/ui/card';
@@ -21,36 +21,35 @@ export default function QuestionnairePage() {
     healthConditions: '',
   });
 
+  // Verificar se já tem assinatura ativa
+  useEffect(() => {
+    const hasSubscription = localStorage.getItem('subscriptionActive') === 'true';
+    if (hasSubscription) {
+      router.push('/dashboard');
+    }
+  }, [router]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      // Salvar dados do questionário no localStorage temporariamente
+      localStorage.setItem('questionnaireData', JSON.stringify({
+        age: parseInt(formData.age),
+        weight: parseFloat(formData.weight),
+        height: parseFloat(formData.height),
+        activity_level: formData.activityLevel,
+        goal: formData.goal,
+        health_conditions: formData.healthConditions,
+        completed_at: new Date().toISOString(),
+      }));
 
-      if (!user) {
-        throw new Error('Usuário não autenticado');
-      }
+      // Marcar questionário como completo
+      localStorage.setItem('questionnaireCompleted', 'true');
 
-      // Salvar dados do questionário
-      const { error: profileError } = await supabase
-        .from('user_profiles')
-        .upsert({
-          user_id: user.id,
-          age: parseInt(formData.age),
-          weight: parseFloat(formData.weight),
-          height: parseFloat(formData.height),
-          activity_level: formData.activityLevel,
-          goal: formData.goal,
-          health_conditions: formData.healthConditions,
-          questionnaire_completed: true,
-          updated_at: new Date().toISOString(),
-        });
-
-      if (profileError) throw profileError;
-
-      // Redirecionar para o dashboard/pagamento
-      router.push('/dashboard');
+      // Redirecionar para o pagamento
+      router.push('/payment');
     } catch (error: any) {
       console.error('Erro ao salvar questionário:', error);
       alert('Erro ao salvar suas informações. Tente novamente.');
@@ -229,7 +228,7 @@ export default function QuestionnairePage() {
                   Salvando...
                 </>
               ) : (
-                'Continuar'
+                'Continuar para Pagamento'
               )}
             </Button>
           </form>
