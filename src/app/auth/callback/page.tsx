@@ -29,12 +29,11 @@ export default function AuthCallbackPage() {
 
           if (user) {
             setStatus('success');
-            setMessage('Email confirmado com sucesso! Redirecionando...');
+            setMessage('Email confirmado com sucesso! Redirecionando para o login...');
             
-            // Aguardar 2 segundos antes de redirecionar
+            // Aguardar 2 segundos antes de redirecionar para a página de login
             setTimeout(() => {
-              // Redirecionar para o questionário de onboarding
-              router.push('/auth?onboarding=true');
+              router.push('/auth');
             }, 2000);
           }
         } else {
@@ -43,10 +42,10 @@ export default function AuthCallbackPage() {
           
           if (session) {
             setStatus('success');
-            setMessage('Autenticação confirmada! Redirecionando...');
+            setMessage('Autenticação confirmada! Redirecionando para o login...');
             
             setTimeout(() => {
-              router.push('/auth?onboarding=true');
+              router.push('/auth');
             }, 2000);
           } else {
             throw new Error('Sessão não encontrada');

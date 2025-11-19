@@ -147,13 +147,20 @@ function AuthContent() {
             return;
           }
           
-          // Verificar se já tem assinatura ativa
-          const hasSubscription = localStorage.getItem('subscriptionActive');
-          if (hasSubscription === 'true') {
-            router.push('/dashboard');
+          // Verificar se já preencheu o questionário
+          const hasCompletedQuestionnaire = localStorage.getItem('questionnaireCompleted');
+          
+          if (hasCompletedQuestionnaire === 'true') {
+            // Se já preencheu o questionário, verificar assinatura
+            const hasSubscription = localStorage.getItem('subscriptionActive');
+            if (hasSubscription === 'true') {
+              router.push('/dashboard');
+            } else {
+              router.push('/payment');
+            }
           } else {
-            // Redirecionar para pagamento
-            router.push('/payment');
+            // Se não preencheu o questionário, redirecionar para ele
+            setShowOnboarding(true);
           }
         }
       } else {
@@ -207,12 +214,14 @@ function AuthContent() {
     if (onboardingStep < 4) {
       setOnboardingStep(onboardingStep + 1);
     } else {
-      // Salvar dados e ir para página de pagamento
+      // Salvar dados e marcar questionário como completo
       localStorage.setItem('userProfile', JSON.stringify({
         name,
         email,
         ...onboardingData
       }));
+      localStorage.setItem('questionnaireCompleted', 'true');
+      // Ir para página de pagamento
       router.push('/payment');
     }
   };
